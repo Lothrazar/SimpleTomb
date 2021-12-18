@@ -28,7 +28,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.ToolType;
 
 public class BlockTomb extends BaseEntityBlock {
 
@@ -62,11 +61,6 @@ public class BlockTomb extends BaseEntityBlock {
   @Override
   public String getDescriptionId() {
     return ModTomb.MODID + ".grave." + this.name;
-  }
-
-  @Override
-  public boolean isToolEffective(BlockState state, ToolType tool) {
-    return false;
   }
 
   @Override
