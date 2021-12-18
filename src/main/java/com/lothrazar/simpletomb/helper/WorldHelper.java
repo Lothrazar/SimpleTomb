@@ -32,9 +32,10 @@ public class WorldHelper {
       return false;
     }
     //    FluidState fluidHere = world.getFluidState(myPos);
+
     //only air or water. not any fluid state, and not any waterlogged block
     BlockState blockState = world.getBlockState(myPos);
-    return blockState.getBlock() == Blocks.AIR || blockState.getBlock() == Blocks.WATER; // && fluidHere.getFluid().isIn(FluidTags.WATER));
+    return blockState.getBlock() == Blocks.AIR || blockState.getBlock() == Blocks.CAVE_AIR || blockState.getBlock() == Blocks.WATER; // && fluidHere.getFluid().isIn(FluidTags.WATER));
   }
 
   public static LocationBlockPos findGraveSpawn(final Player player, final BlockPos initPos) {
