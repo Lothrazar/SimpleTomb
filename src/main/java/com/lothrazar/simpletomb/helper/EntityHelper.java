@@ -9,6 +9,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.common.util.FakePlayer;
@@ -40,7 +41,7 @@ public class EntityHelper {
       }
       //
       if (player.getOffhandItem().isEmpty()) {
-        if (stack.getItem().isShield(stack, player)) { // && player.setSlot(99, stack.copy())) {
+        if (stack.getItem() == Items.SHIELD) { // stack.getItem().isShield(stack, player)) { // && player.setSlot(99, stack.copy())) {
           //          player.setItemInHand(InteractionHand.OFF_HAND, stack.copy());
           player.setItemSlot(EquipmentSlot.OFFHAND, stack.copy());
           //          player.getInventory().setItem(99, stack.copy());

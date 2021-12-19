@@ -212,7 +212,7 @@ public class TileEntityTomb extends BlockEntity {
 
   @Override
   public ClientboundBlockEntityDataPacket getUpdatePacket() {
-    return new ClientboundBlockEntityDataPacket(this.worldPosition, 1, getUpdateTag());
+    return ClientboundBlockEntityDataPacket.create(this); // this.worldPosition, -1, getUpdateTag());
   }
 
   @Override

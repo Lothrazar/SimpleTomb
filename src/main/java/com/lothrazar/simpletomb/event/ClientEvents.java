@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.RenderLevelLastEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -40,7 +40,7 @@ public class ClientEvents {
   }
 
   @SubscribeEvent
-  public void render(RenderWorldLastEvent event) {
+  public void render(RenderLevelLastEvent event) {
     LocalPlayer player = Minecraft.getInstance().player;
     if (player != null && player.level != null) {
       ItemStack stack = player.getMainHandItem();
@@ -50,7 +50,7 @@ public class ClientEvents {
         if (location != null && !location.isOrigin() &&
             location.dim.equalsIgnoreCase(WorldHelper.dimensionToString(player.level)) &&
             player.level.isInWorldBounds(location.toBlockPos())) {
-          PoseStack poseStack = event.getMatrixStack();
+          PoseStack poseStack = event.getPoseStack();
           poseStack.pushPose();
           createBox(bufferSource, poseStack, location.x, location.y, location.z, 1.0F);
           poseStack.popPose();

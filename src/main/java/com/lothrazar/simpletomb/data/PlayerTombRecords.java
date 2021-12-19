@@ -9,7 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.nbt.Tag;
 
 public class PlayerTombRecords {
 
@@ -33,7 +33,7 @@ public class PlayerTombRecords {
   public void read(CompoundTag data, UUID playerId) {
     this.playerId = playerId;
     if (data.contains(ModTomb.MODID)) {
-      ListTag glist = data.getList(ModTomb.MODID, Constants.NBT.TAG_COMPOUND);
+      ListTag glist = data.getList(ModTomb.MODID, Tag.TAG_COMPOUND);
       for (int i = 0; i < glist.size(); i++) {
         this.playerGraves.add(glist.getCompound(i));
       }
