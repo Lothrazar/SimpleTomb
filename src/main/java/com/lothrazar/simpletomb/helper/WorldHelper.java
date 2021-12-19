@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import com.lothrazar.simpletomb.ConfigTomb;
+import com.lothrazar.simpletomb.ModTomb;
 import com.lothrazar.simpletomb.data.LocationBlockPos;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -25,9 +26,9 @@ public class WorldHelper {
   }
 
   public static boolean isValidPlacement(Level world, BlockPos myPos) {
-    //0 is the bottom bedrock level
+    //MinBuildHeight varies by settings. (like datapack)
     //so if we place there, players cant place a block under it to stand safely
-    if (myPos.getY() < 1 || world.isOutsideBuildHeight(myPos)) {
+    if (myPos.getY() < world.getMinBuildHeight() + 1 || world.isOutsideBuildHeight(myPos)) {
       // blockstate doesnt matter, out of world
       return false;
     }
