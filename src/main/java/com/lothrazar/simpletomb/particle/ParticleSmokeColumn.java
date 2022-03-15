@@ -18,21 +18,21 @@ public class ParticleSmokeColumn extends MetaParticle {
 
   @Override
   public void tick() {
-    double y = this.posY;
+    double y = this.y;
     for (int i = 0; i < 6; i++) {
-      this.world.addParticle(TombRegistry.ROTATING_SMOKE, this.posX - 0.1d, y, this.posZ - 0.1d, 0d, 0d, 0d);
-      this.world.addParticle(TombRegistry.ROTATING_SMOKE, this.posX - 0.1d, y, this.posZ + 0.1d, 0d, 0d, 0d);
-      this.world.addParticle(TombRegistry.ROTATING_SMOKE, this.posX + 0.1d, y, this.posZ - 0.1d, 0d, 0d, 0d);
-      this.world.addParticle(TombRegistry.ROTATING_SMOKE, this.posX + 0.1d, y, this.posZ + 0.1d, 0d, 0d, 0d);
+      this.level.addParticle(TombRegistry.ROTATING_SMOKE, this.x - 0.1d, y, this.z - 0.1d, 0d, 0d, 0d);
+      this.level.addParticle(TombRegistry.ROTATING_SMOKE, this.x - 0.1d, y, this.z + 0.1d, 0d, 0d, 0d);
+      this.level.addParticle(TombRegistry.ROTATING_SMOKE, this.x + 0.1d, y, this.z - 0.1d, 0d, 0d, 0d);
+      this.level.addParticle(TombRegistry.ROTATING_SMOKE, this.x + 0.1d, y, this.z + 0.1d, 0d, 0d, 0d);
       y += 0.3d;
     }
-    setExpired();
+    remove();
   }
 
   public static class Factory implements IParticleFactory<BasicParticleType> {
 
     @Override
-    public Particle makeParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
+    public Particle createParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
       return new ParticleSmokeColumn(world, x, y, z);
     }
   }

@@ -31,36 +31,36 @@ abstract class CustomParticle extends TexturedParticle {
 
   @SuppressWarnings("deprecation")
   @Override
-  public void renderParticle(IVertexBuilder buffer, ActiveRenderInfo entityIn, float partialTicks) {
+  public void render(IVertexBuilder buffer, ActiveRenderInfo entityIn, float partialTicks) {
     TextureManager textureManager = Minecraft.getInstance().textureManager;
-    RenderHelper.disableStandardItemLighting();
+    RenderHelper.turnOff();
     RenderSystem.depthMask(false);
-    textureManager.bindTexture(getTexture());
+    textureManager.bind(getTexture());
     RenderSystem.enableBlend();
     RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
     RenderSystem.alphaFunc(516, 0.003921569F);
-    Tessellator.getInstance().getBuffer().begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
-    super.renderParticle(buffer, entityIn, partialTicks);
-    Tessellator.getInstance().draw();
+    Tessellator.getInstance().getBuilder().begin(7, DefaultVertexFormats.PARTICLE);
+    super.render(buffer, entityIn, partialTicks);
+    Tessellator.getInstance().end();
   }
 
   @Override
-  protected float getMinU() {
+  protected float getU0() {
     return 0f;
   }
 
   @Override
-  protected float getMaxU() {
+  protected float getU1() {
     return 1f;
   }
 
   @Override
-  protected float getMinV() {
+  protected float getV0() {
     return 0f;
   }
 
   @Override
-  protected float getMaxV() {
+  protected float getV1() {
     return 1f;
   }
 

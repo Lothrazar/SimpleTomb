@@ -40,10 +40,10 @@ public class TombRegistry {
   @SubscribeEvent
   public static void registerBlocks(Register<Block> event) {
     IForgeRegistry<Block> r = event.getRegistry();
-    r.register(new BlockTomb(Block.Properties.create(Material.ROCK), ModelTomb.GRAVE_SIMPLE).setRegistryName("grave_simple"));
-    r.register(new BlockTomb(Block.Properties.create(Material.ROCK), ModelTomb.GRAVE_NORMAL).setRegistryName("grave_normal"));
-    r.register(new BlockTomb(Block.Properties.create(Material.ROCK), ModelTomb.GRAVE_CROSS).setRegistryName("grave_cross"));
-    r.register(new BlockTomb(Block.Properties.create(Material.ROCK), ModelTomb.GRAVE_TOMB).setRegistryName("tombstone"));
+    r.register(new BlockTomb(Block.Properties.of(Material.STONE), ModelTomb.GRAVE_SIMPLE).setRegistryName("grave_simple"));
+    r.register(new BlockTomb(Block.Properties.of(Material.STONE), ModelTomb.GRAVE_NORMAL).setRegistryName("grave_normal"));
+    r.register(new BlockTomb(Block.Properties.of(Material.STONE), ModelTomb.GRAVE_CROSS).setRegistryName("grave_cross"));
+    r.register(new BlockTomb(Block.Properties.of(Material.STONE), ModelTomb.GRAVE_TOMB).setRegistryName("tombstone"));
   }
 
   @SubscribeEvent
@@ -55,7 +55,7 @@ public class TombRegistry {
   @SubscribeEvent
   public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
     IForgeRegistry<TileEntityType<?>> r = event.getRegistry();
-    r.register(TileEntityType.Builder.create(TileEntityTomb::new, new BlockTomb[] {
+    r.register(TileEntityType.Builder.of(TileEntityTomb::new, new BlockTomb[] {
         TombRegistry.GRAVE_SIMPLE,
         TombRegistry.GRAVE_NORMAL,
         TombRegistry.GRAVE_CROSS,

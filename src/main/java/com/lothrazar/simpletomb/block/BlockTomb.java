@@ -28,17 +28,17 @@ import net.minecraftforge.common.ToolType;
 
 public class BlockTomb extends Block {
 
-  public static final EnumProperty<Direction> FACING = HorizontalBlock.HORIZONTAL_FACING;
+  public static final EnumProperty<Direction> FACING = HorizontalBlock.FACING;
   public static final IntegerProperty MODEL_TEXTURE = IntegerProperty.create("model_texture", 0, 1);
   public static final BooleanProperty IS_ENGRAVED = BooleanProperty.create("is_engraved");
-  private static final VoxelShape GROUND = Block.makeCuboidShape(0.0D, 0.0D, 0.0D, 16.0D, 4D, 16.0D);
+  private static final VoxelShape GROUND = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 4D, 16.0D);
   protected final String name;
   protected final ModelTomb graveModel;
 
   public BlockTomb(Block.Properties properties, ModelTomb graveModel) {
-    super(properties.notSolid().hardnessAndResistance(-1.0F, 3600000.0F).noDrops());
+    super(properties.noOcclusion().strength(-1.0F, 3600000.0F).noDrops());
     this.graveModel = graveModel;
-    this.name = graveModel.getString();
+    this.name = graveModel.getSerializedName();
   }
 
   @Override
@@ -51,7 +51,7 @@ public class BlockTomb extends Block {
   }
 
   @Override
-  public String getTranslationKey() {
+  public String getDescriptionId() {
     return ModTomb.MODID + ".grave." + this.name;
   }
 
@@ -61,7 +61,7 @@ public class BlockTomb extends Block {
   }
 
   @Override
-  public boolean canDropFromExplosion(Explosion explosionIn) {
+  public boolean dropFromExplosion(Explosion explosionIn) {
     return false;
   }
 
@@ -71,7 +71,7 @@ public class BlockTomb extends Block {
   }
 
   public static TileEntityTomb getTileEntity(World world, BlockPos pos) {
-    TileEntity tile = world.getTileEntity(pos);
+    TileEntity tile = world.getBlockEntity(pos);
     return tile instanceof TileEntityTomb ? (TileEntityTomb) tile : null;
   }
 
@@ -86,13 +86,13 @@ public class BlockTomb extends Block {
   }
 
   @Override
-  protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+  protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
     builder.add(FACING).add(IS_ENGRAVED).add(MODEL_TEXTURE);
   }
 
   @Override
-  public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
-    if (!world.isRemote && entity.isSneaking() && entity.isAlive() &&
+  public void entityInside(BlockState state, World world, BlockPos pos, Entity entity) {
+    if (!world.isClientSide && entity.isShiftKeyDown() && entity.isAlive() &&
         EntityHelper.isValidPlayer(entity)) {
       activatePlayerGrave(world, pos, state, (ServerPlayerEntity) entity);
     }

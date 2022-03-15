@@ -19,8 +19,8 @@ public class TransparentParticle extends SpriteTexturedParticle {
   }
 
   @Override
-  public void renderParticle(IVertexBuilder buffer, ActiveRenderInfo renderInfo, float partialTicks) {
+  public void render(IVertexBuilder buffer, ActiveRenderInfo renderInfo, float partialTicks) {
     RenderSystem.depthMask(false);
-    super.renderParticle(buffer, renderInfo, partialTicks);
+    super.render(buffer, renderInfo, partialTicks);
   }
 }

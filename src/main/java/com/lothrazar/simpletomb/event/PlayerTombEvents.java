@@ -92,13 +92,13 @@ public class PlayerTombEvents {
       ListNBT stackList = persistentTag.getList(TB_SOULBOUND_STACKS, 10);
       for (int i = 0; i < stackList.size(); ++i) {
         //        ItemStack.
-        ItemStack stack = ItemStack.read(stackList.getCompound(i));
+        ItemStack stack = ItemStack.of(stackList.getCompound(i));
         if (!stack.isEmpty()) {
           ItemHandlerHelper.giveItemToPlayer(player, stack);
         }
       }
       persistentTag.remove(TB_SOULBOUND_STACKS);
-      player.container.detectAndSendChanges();
+      player.inventoryMenu.broadcastChanges();
     }
   }
 
@@ -148,12 +148,12 @@ public class PlayerTombEvents {
   @SubscribeEvent
   public void onSaveFile(PlayerEvent.SaveToFile event) {
     PlayerEntity player = event.getPlayer();
-    File mctomb = new File(event.getPlayerDirectory(), player.getUniqueID() + TOMB_FILE_EXT);
+    File mctomb = new File(event.getPlayerDirectory(), player.getUUID() + TOMB_FILE_EXT);
     //
     //save player data to the file 
-    if (grv.containsKey(player.getUniqueID())) {
+    if (grv.containsKey(player.getUUID())) {
       //yes i have data to save
-      PlayerTombRecords dataToSave = grv.get(player.getUniqueID());
+      PlayerTombRecords dataToSave = grv.get(player.getUUID());
       CompoundNBT data = dataToSave.write();
       try {
         FileOutputStream fileoutputstream = new FileOutputStream(mctomb);
@@ -169,21 +169,21 @@ public class PlayerTombEvents {
   @SubscribeEvent
   public void onLoadFile(PlayerEvent.LoadFromFile event) {
     PlayerEntity player = event.getPlayer();
-    File mctomb = new File(event.getPlayerDirectory(), player.getUniqueID() + TOMB_FILE_EXT);
+    File mctomb = new File(event.getPlayerDirectory(), player.getUUID() + TOMB_FILE_EXT);
     if (mctomb.exists()) {
       try {
         FileInputStream fileinputstream = new FileInputStream(mctomb);
         CompoundNBT data = CompressedStreamTools.readCompressed(fileinputstream);
         fileinputstream.close();
         PlayerTombRecords dataLoaded = new PlayerTombRecords();
-        dataLoaded.read(data, player.getUniqueID());
-        if (grv.containsKey(player.getUniqueID())) {
+        dataLoaded.read(data, player.getUUID());
+        if (grv.containsKey(player.getUUID())) {
           //overwrite list
-          grv.put(player.getUniqueID(), dataLoaded);
+          grv.put(player.getUUID(), dataLoaded);
         }
         else {
           //set list
-          grv.put(player.getUniqueID(), dataLoaded);
+          grv.put(player.getUUID(), dataLoaded);
         }
       }
       catch (Exception e) {
@@ -205,7 +205,7 @@ public class PlayerTombEvents {
       if (entityItem != null && !entityItem.getItem().isEmpty()) {
         ItemStack stack = entityItem.getItem();
         //        stuff.add(stack);
-        drops.add(stack.write(new CompoundNBT()));
+        drops.add(stack.save(new CompoundNBT()));
         if (stack.getItem() != TombRegistry.GRAVE_KEY) {
           isEmpty = false;
         }
@@ -216,9 +216,9 @@ public class PlayerTombEvents {
       //timestamp 
       tombstoneTag.putLong("timestamp", System.currentTimeMillis());
       tombstoneTag.put("drops", drops);
-      tombstoneTag.put("pos", NBTUtil.writeBlockPos(player.getPosition()));
-      tombstoneTag.putString("dimension", player.world.getDimensionKey().getLocation().toString());
-      UUID pid = player.getUniqueID();
+      tombstoneTag.put("pos", NBTUtil.writeBlockPos(player.blockPosition()));
+      tombstoneTag.putString("dimension", player.level.dimension().location().toString());
+      UUID pid = player.getUUID();
       tombstoneTag.putString("playerid", pid.toString());
       tombstoneTag.putString("playername", player.getDisplayName().getString());
       //    world.getSavedData().ge
@@ -234,7 +234,7 @@ public class PlayerTombEvents {
 
   private void placeTombstone(LivingDropsEvent event) {
     ServerPlayerEntity player = (ServerPlayerEntity) event.getEntityLiving();
-    ServerWorld world = player.getServerWorld();
+    ServerWorld world = player.getLevel();
     Iterator<ItemEntity> it = event.getDrops().iterator();
     ArrayList<ItemStack> keys = new ArrayList<>();
     while (it.hasNext()) {
@@ -254,7 +254,7 @@ public class PlayerTombEvents {
       MessageType.MESSAGE_NO_LOOT_FOR_GRAVE.sendSpecialMessage(player);
       return;
     }
-    BlockPos initPos = WorldHelper.getInitialPos(world, new BlockPos(player.getPosition()));
+    BlockPos initPos = WorldHelper.getInitialPos(world, new BlockPos(player.blockPosition()));
     LocationBlockPos spawnPos = WorldHelper.findGraveSpawn(player, initPos);
     if (spawnPos == null || spawnPos.toBlockPos() == null) {
       //found a block but its not air, cant use it
@@ -262,14 +262,14 @@ public class PlayerTombEvents {
       ModTomb.LOGGER.log(Level.INFO, MessageType.MESSAGE_NO_PLACE_FOR_GRAVE.getTranslation());
       return;
     }
-    Direction facing = player.getHorizontalFacing().getOpposite();
+    Direction facing = player.getDirection().getOpposite();
     BlockState state = getRandomGrave(world, facing);
     boolean wasPlaced = WorldHelper.placeGrave(world, spawnPos.toBlockPos(), state);
     if (!wasPlaced) {
       sendFailMessage(player);
       return;
     }
-    TileEntity tile = world.getTileEntity(spawnPos.toBlockPos());
+    TileEntity tile = world.getBlockEntity(spawnPos.toBlockPos());
     IItemHandler itemHandler = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null).orElse(null);
     if (!(tile instanceof TileEntityTomb)
         || itemHandler == null) {
@@ -298,7 +298,7 @@ public class PlayerTombEvents {
       ItemHandlerHelper.insertItemStacked(itemHandler, entityItem.getItem(), false);
       entityItem.setItem(ItemStack.EMPTY);
     }
-    world.notifyBlockUpdate(spawnPos.toBlockPos(), state, state, 2);
+    world.sendBlockUpdated(spawnPos.toBlockPos(), state, state, 2);
     //it has been placed
     DeathHelper.INSTANCE.putLastGrave(player, spawnPos);
     if (ConfigTomb.TOMBLOG.get()) {
@@ -324,9 +324,9 @@ public class PlayerTombEvents {
     if (ConfigTomb.KEYNAMED.get()) {
       TranslationTextComponent text = new TranslationTextComponent(player);
       text.append(new TranslationTextComponent(" "));
-      text.append(key.getDisplayName());
-      text.mergeStyle(TextFormatting.GOLD);
-      key.setDisplayName(text);
+      text.append(key.getHoverName());
+      text.withStyle(TextFormatting.GOLD);
+      key.setHoverName(text);
     }
   }
 
@@ -338,9 +338,9 @@ public class PlayerTombEvents {
         TombRegistry.GRAVE_CROSS,
         TombRegistry.TOMBSTONE,
     };
-    BlockState state = graves[world.rand.nextInt(graves.length)].getDefaultState();
-    state = state.with(BlockTomb.FACING, facing);
-    state = state.with(BlockTomb.MODEL_TEXTURE, world.rand.nextInt(2));
+    BlockState state = graves[world.random.nextInt(graves.length)].defaultBlockState();
+    state = state.setValue(BlockTomb.FACING, facing);
+    state = state.setValue(BlockTomb.MODEL_TEXTURE, world.random.nextInt(2));
     return state;
   }
 
@@ -349,10 +349,10 @@ public class PlayerTombEvents {
     if (range == 0) {
       return new ArrayList<>();
     }
-    int posX = player.getPosition().getX();
-    int posY = player.getPosition().getY();
-    int posZ = player.getPosition().getZ();
-    return player.world.getEntitiesWithinAABB(ItemEntity.class, new AxisAlignedBB(
+    int posX = player.blockPosition().getX();
+    int posY = player.blockPosition().getY();
+    int posZ = player.blockPosition().getZ();
+    return player.level.getEntitiesOfClass(ItemEntity.class, new AxisAlignedBB(
         posX - range,
         posY - range,
         posZ - range,

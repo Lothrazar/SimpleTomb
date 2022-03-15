@@ -44,14 +44,14 @@ public class RenderTomb extends TileEntityRenderer<TileEntityTomb> {
     if (!te.hasOwner()) {
       return;
     }
-    BlockState knownState = te.getWorld().getBlockState(te.getPos());
+    BlockState knownState = te.getLevel().getBlockState(te.getBlockPos());
     if (!(knownState.getBlock() instanceof BlockTomb)) {
       return;
     }
-    Direction facing = knownState.get(BlockTomb.FACING);
+    Direction facing = knownState.getValue(BlockTomb.FACING);
     BlockTomb grave = (BlockTomb) knownState.getBlock();
     ModelTomb graveModel = grave.getGraveType();
-    renderHalloween(matrixStack, iRenderTypeBuffer, graveModel, facing, light, WorldHelper.isNight(te.getWorld()));
+    renderHalloween(matrixStack, iRenderTypeBuffer, graveModel, facing, light, WorldHelper.isNight(te.getLevel()));
     light = 0xf000f0;
     int rotationIndex;
     float modX = 0.5F, modY, modZ = 0.5F;
@@ -110,28 +110,28 @@ public class RenderTomb extends TileEntityRenderer<TileEntityTomb> {
           modZ = 1f - value;
         }
     }
-    matrixStack.push();
+    matrixStack.pushPose();
     matrixStack.translate(modX, modY, modZ);
-    matrixStack.rotate(Vector3f.XP.rotationDegrees(180f));
+    matrixStack.mulPose(Vector3f.XP.rotationDegrees(180f));
     if (isCross) {
       switch (facing) {
         case SOUTH:
-          matrixStack.rotate(Vector3f.XP.rotationDegrees(-90f));
+          matrixStack.mulPose(Vector3f.XP.rotationDegrees(-90f));
         break;
         case WEST:
-          matrixStack.rotate(Vector3f.ZP.rotationDegrees(90f));
+          matrixStack.mulPose(Vector3f.ZP.rotationDegrees(90f));
         break;
         case EAST:
-          matrixStack.rotate(Vector3f.ZP.rotationDegrees(-90f));
+          matrixStack.mulPose(Vector3f.ZP.rotationDegrees(-90f));
         break;
         case NORTH:
         default:
-          matrixStack.rotate(Vector3f.XP.rotationDegrees(90f));
+          matrixStack.mulPose(Vector3f.XP.rotationDegrees(90f));
         break;
       }
     }
-    matrixStack.rotate(Vector3f.YP.rotationDegrees(-90f * rotationIndex)); // horizontal rot
-    FontRenderer fontRender = this.renderDispatcher.fontRenderer;
+    matrixStack.mulPose(Vector3f.YP.rotationDegrees(-90f * rotationIndex)); // horizontal rot
+    FontRenderer fontRender = this.renderer.font;
     int textColor = 0xFFFFFFFF;
     // rip message
     showString(TextFormatting.BOLD + MessageType.MESSAGE_RIP.getTranslation(), matrixStack, iRenderTypeBuffer, fontRender, 0,
@@ -149,14 +149,14 @@ public class RenderTomb extends TileEntityRenderer<TileEntityTomb> {
     String timeString = new SimpleDateFormat(TIME_FORMAT).format(date);
     showString(TextFormatting.BOLD + fdateString, matrixStack, iRenderTypeBuffer, fontRender, 36, textColor, scaleForDate, light);
     showString(TextFormatting.BOLD + timeString, matrixStack, iRenderTypeBuffer, fontRender, 46, textColor, scaleForDate, light);
-    matrixStack.pop();
+    matrixStack.popPose();
   }
 
   private void showString(String content, MatrixStack matrixStack, IRenderTypeBuffer iRenderTypeBuffer, FontRenderer fontRenderer, int posY, int color, float scale, int light) {
-    matrixStack.push();
+    matrixStack.pushPose();
     matrixStack.scale(scale, scale, scale);
-    fontRenderer.renderString(content, -fontRenderer.getStringWidth(content) / 2, posY - 30, color, false, matrixStack.getLast().getMatrix(), iRenderTypeBuffer, false, 0, light);
-    matrixStack.pop();
+    fontRenderer.drawInBatch(content, -fontRenderer.width(content) / 2, posY - 30, color, false, matrixStack.last().pose(), iRenderTypeBuffer, false, 0, light);
+    matrixStack.popPose();
   }
 
   @SuppressWarnings("deprecation")
@@ -189,21 +189,21 @@ public class RenderTomb extends TileEntityRenderer<TileEntityTomb> {
         decoY += 0.1f;
       break;
     }
-    Minecraft.getInstance().textureManager.bindTexture(SKELETON_HEAD);
-    matrixStack.push();
+    Minecraft.getInstance().textureManager.bind(SKELETON_HEAD);
+    matrixStack.pushPose();
     matrixStack.translate(decoX, decoY, decoZ);
-    matrixStack.rotate(Vector3f.YP.rotationDegrees(facing.getHorizontalAngle() + (facing == Direction.SOUTH || facing == Direction.NORTH ? 180 : 0)));
+    matrixStack.mulPose(Vector3f.YP.rotationDegrees(facing.toYRot() + (facing == Direction.SOUTH || facing == Direction.NORTH ? 180 : 0)));
     if (graveModel == ModelTomb.GRAVE_NORMAL || graveModel == ModelTomb.GRAVE_SIMPLE) {
       matrixStack.scale(0.2f, 0.2f, 0.2f);
       ItemStack stack = new ItemStack(isNight ? Blocks.JACK_O_LANTERN : Blocks.PUMPKIN);
-      Minecraft.getInstance().getItemRenderer().renderItem(stack, net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType.NONE, false, matrixStack, iRenderTypeBuffer, 15728880,
-          net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, Minecraft.getInstance().getItemRenderer().getItemModelWithOverrides(stack, null, null));
+      Minecraft.getInstance().getItemRenderer().render(stack, net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType.NONE, false, matrixStack, iRenderTypeBuffer, 15728880,
+          net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, Minecraft.getInstance().getItemRenderer().getModel(stack, null, null));
     }
     else {
       matrixStack.scale(0.3f, 0.3f, 0.3f);
-      SkullTileEntityRenderer.render(null, 1f, SkullBlock.Types.SKELETON, null, 0f, matrixStack, iRenderTypeBuffer, isNight ? 0xf000f0 : light);
+      SkullTileEntityRenderer.renderSkull(null, 1f, SkullBlock.Types.SKELETON, null, 0f, matrixStack, iRenderTypeBuffer, isNight ? 0xf000f0 : light);
     }
-    matrixStack.pop();
+    matrixStack.popPose();
     RenderSystem.popMatrix();
   }
 }

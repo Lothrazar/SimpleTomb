@@ -62,7 +62,7 @@ public class PlayerTombRecords {
     ListNBT drops = grave.getList("drops", 10);
     List<ItemStack> done = new ArrayList<ItemStack>();
     for (int i = 0; i < drops.size(); i++) {
-      done.add(ItemStack.read(drops.getCompound(i)));
+      done.add(ItemStack.of(drops.getCompound(i)));
     }
     return done;
   }

@@ -18,31 +18,31 @@ public class ParticleBlinkingAura extends TransparentParticle {
 
   private ParticleBlinkingAura(IAnimatedSprite spriteSet, ClientWorld world, double x, double y, double z, int colorMin, int colorMax) {
     super(world, x, y, z);
-    this.motionX = this.motionY = this.motionZ = 0d;
-    setAlphaF(0.15f);
-    multiplyParticleScaleBy(WorldHelper.getRandom(world.rand, 0.6f, 0.8f));
-    setMaxAge(7);
-    this.canCollide = false;
+    this.xd = this.yd = this.zd = 0d;
+    setAlpha(0.15f);
+    scale(WorldHelper.getRandom(world.random, 0.6f, 0.8f));
+    setLifetime(7);
+    this.hasPhysics = false;
     this.colorCodeMin = WorldHelper.getRGBColor3F(colorMin);
     this.colorCodeMax = WorldHelper.getRGBColor3F(colorMax);
     setColor(this.colorCodeMin[0], this.colorCodeMin[1], this.colorCodeMin[2]);
     this.spriteSet = spriteSet;
-    selectSpriteWithAge(this.spriteSet);
+    setSpriteFromAge(this.spriteSet);
   }
 
   @Override
   public void tick() {
     super.tick();
     if (isAlive()) {
-      setColor(WorldHelper.getRandom(this.world.rand, this.colorCodeMin[0], this.colorCodeMax[0]),
-          WorldHelper.getRandom(this.world.rand, this.colorCodeMin[1], this.colorCodeMax[1]),
-          WorldHelper.getRandom(this.world.rand, this.colorCodeMin[2], this.colorCodeMax[2]));
-      selectSpriteWithAge(this.spriteSet);
+      setColor(WorldHelper.getRandom(this.level.random, this.colorCodeMin[0], this.colorCodeMax[0]),
+          WorldHelper.getRandom(this.level.random, this.colorCodeMin[1], this.colorCodeMax[1]),
+          WorldHelper.getRandom(this.level.random, this.colorCodeMin[2], this.colorCodeMax[2]));
+      setSpriteFromAge(this.spriteSet);
     }
   }
 
   @Override
-  protected int getBrightnessForRender(float partialTick) {
+  protected int getLightColor(float partialTick) {
     int skylight = 15;
     int blocklight = 15;
     return skylight << 20 | blocklight << 4;
@@ -62,7 +62,7 @@ public class ParticleBlinkingAura extends TransparentParticle {
     }
 
     @Override
-    public Particle makeParticle(ParticleDataTwoInt type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
+    public Particle createParticle(ParticleDataTwoInt type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
       return new ParticleBlinkingAura(this.spriteSet, world, x, y, z, type.oneInt, type.twoInt);
     }
   }

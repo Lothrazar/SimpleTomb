@@ -22,13 +22,13 @@ public class ParticleGhost extends TransparentParticle {
     super(world, x, y + 1d, z);
     this.mX = motionX;
     this.mZ = motionZ;
-    this.motionX = this.motionY = this.motionZ = 0d;
-    setMaxAge(200);
-    this.canCollide = false;
-    multiplyParticleScaleBy(8f);
+    this.xd = this.yd = this.zd = 0d;
+    setLifetime(200);
+    this.hasPhysics = false;
+    scale(8f);
     setColor(1f, 1f, 1f);
     this.spriteSet = spriteSet;
-    selectSpriteWithAge(this.spriteSet);
+    setSpriteFromAge(this.spriteSet);
   }
 
   @Override
@@ -36,20 +36,20 @@ public class ParticleGhost extends TransparentParticle {
     super.tick();
     if (isAlive()) {
       if (this.age == 10) {
-        this.motionX = mX;
-        this.motionZ = mZ;
+        this.xd = mX;
+        this.zd = mZ;
       }
-      float ratio = this.age / (float) this.maxAge;
-      setAlphaF((1f - ratio) * 0.8f);
-      selectSpriteWithAge(this.spriteSet);
-      if (world.isRemote) {
-        ClientUtils.produceGraveSmoke(this.world, this.posX, this.posY - 1d, this.posZ);
+      float ratio = this.age / (float) this.lifetime;
+      setAlpha((1f - ratio) * 0.8f);
+      setSpriteFromAge(this.spriteSet);
+      if (level.isClientSide) {
+        ClientUtils.produceGraveSmoke(this.level, this.x, this.y - 1d, this.z);
       }
     }
   }
 
   @Override
-  protected int getBrightnessForRender(float partialTick) {
+  protected int getLightColor(float partialTick) {
     int skylight = 15;
     int blocklight = 15;
     return skylight << 20 | blocklight << 4;
@@ -69,8 +69,8 @@ public class ParticleGhost extends TransparentParticle {
     }
 
     @Override
-    public Particle makeParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
-      Random rand = world == null || world.rand == null ? new Random() : world.rand;
+    public Particle createParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
+      Random rand = world == null || world.random == null ? new Random() : world.random;
       return new ParticleGhost(this.spriteSet, world, x, y, z, WorldHelper.getRandom(rand, -0.05d, 0.05d), 0d, WorldHelper.getRandom(rand, -0.05d, 0.05d));
     }
   }

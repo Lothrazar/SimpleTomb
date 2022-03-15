@@ -40,13 +40,13 @@ public class GraveKeyItem extends SwordItem {
   private static final String TOMB_POS = "tombPos";
 
   public GraveKeyItem(Item.Properties properties) {
-    super(ItemTier.STONE, 3, -2.4F, properties.maxStackSize(1));
+    super(ItemTier.STONE, 3, -2.4F, properties.stacksTo(1));
   }
 
   @Override
   @OnlyIn(Dist.CLIENT)
-  public ITextComponent getName() {
-    return new TranslationTextComponent(this.getTranslationKey()).mergeStyle(TextFormatting.GOLD);
+  public ITextComponent getDescription() {
+    return new TranslationTextComponent(this.getDescriptionId()).withStyle(TextFormatting.GOLD);
   }
 
   @Override
@@ -55,10 +55,10 @@ public class GraveKeyItem extends SwordItem {
       PlayerEntity player = (PlayerEntity) entity;
       LocationBlockPos location = this.getTombPos(stack);
       if (location == null || location.isOrigin()
-          || location.dim.equalsIgnoreCase(WorldHelper.dimensionToString(player.world)) == false) {
+          || location.dim.equalsIgnoreCase(WorldHelper.dimensionToString(player.level)) == false) {
         return;
       }
-      double distance = location.getDistance(player.getPosition());
+      double distance = location.getDistance(player.blockPosition());
       boolean canTp = false;
       if (player.isCreative()) {
         canTp = ConfigTomb.TPCREATIVE.get();
@@ -72,11 +72,11 @@ public class GraveKeyItem extends SwordItem {
         if (timeLeft <= 1) {
           //teleport happens here
           BlockPos pos = location.toBlockPos();
-          player.setPositionAndUpdate(pos.getX(), pos.getY(), pos.getZ());
+          player.teleportTo(pos.getX(), pos.getY(), pos.getZ());
         }
-        else if (entity.world.isRemote) {
+        else if (entity.level.isClientSide) {
           //not done, and can TP
-          ClientUtils.produceParticleCasting(entity, p -> !p.isHandActive());
+          ClientUtils.produceParticleCasting(entity, p -> !p.isUsingItem());
         }
       }
     }
@@ -88,15 +88,15 @@ public class GraveKeyItem extends SwordItem {
   }
 
   @Override
-  public ActionResultType onItemUse(ItemUseContext context) {
+  public ActionResultType useOn(ItemUseContext context) {
     if (ConfigTomb.KEYOPENONUSE.get()) {
-      BlockPos pos = context.getPos();
+      BlockPos pos = context.getClickedPos();
       PlayerEntity player = context.getPlayer();
-      if (player.getHeldItem(context.getHand()).getItem() == TombRegistry.GRAVE_KEY) {
-        BlockState state = context.getWorld().getBlockState(pos);
+      if (player.getItemInHand(context.getHand()).getItem() == TombRegistry.GRAVE_KEY) {
+        BlockState state = context.getLevel().getBlockState(pos);
         if (state.getBlock() instanceof BlockTomb) {
           //open me
-          BlockTomb.activatePlayerGrave(player.world, pos, state, player);
+          BlockTomb.activatePlayerGrave(player.level, pos, state, player);
           return ActionResultType.SUCCESS;
         }
       }
@@ -105,33 +105,33 @@ public class GraveKeyItem extends SwordItem {
   }
 
   @Override
-  public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
-    ItemStack itemstack = playerIn.getHeldItem(handIn);
-    playerIn.setActiveHand(handIn);
-    return ActionResult.resultSuccess(itemstack);
+  public ActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand handIn) {
+    ItemStack itemstack = playerIn.getItemInHand(handIn);
+    playerIn.startUsingItem(handIn);
+    return ActionResult.success(itemstack);
   }
 
   @Override
-  public UseAction getUseAction(ItemStack stack) {
+  public UseAction getUseAnimation(ItemStack stack) {
     return UseAction.BOW;
   }
 
   @Override
   @OnlyIn(Dist.CLIENT)
-  public void addInformation(ItemStack stack, @Nullable World world, List<ITextComponent> list, ITooltipFlag flag) {
+  public void appendHoverText(ItemStack stack, @Nullable World world, List<ITextComponent> list, ITooltipFlag flag) {
     if (Screen.hasShiftDown()) {
       LocationBlockPos location = this.getTombPos(stack);
       //      this.addItemPosition(list, this.getTombPos(stack));
       PlayerEntity player = Minecraft.getInstance().player;
       if (player != null && !location.isOrigin()) {
-        BlockPos pos = player.getPosition();
+        BlockPos pos = player.blockPosition();
         int distance = (int) location.getDistance(pos);
         list.add(new TranslationTextComponent(MessageType.MESSAGE_DISTANCE.getKey(),
             distance, location.x, location.y, location.z, location.dim)
-                .mergeStyle(TextFormatting.DARK_PURPLE));
+                .withStyle(TextFormatting.DARK_PURPLE));
       }
     }
-    super.addInformation(stack, world, list, flag);
+    super.appendHoverText(stack, world, list, flag);
   }
 
   public boolean setTombPos(ItemStack stack, LocationBlockPos location) {
@@ -170,7 +170,7 @@ public class GraveKeyItem extends SwordItem {
    * How many keys, ignoring data. casts long to int
    */
   public int countKeyInInventory(PlayerEntity player) {
-    return (int) player.inventory.mainInventory.stream()
+    return (int) player.inventory.items.stream()
         .filter(stack -> stack.getItem() == TombRegistry.GRAVE_KEY)
         .count();
   }

@@ -30,6 +30,7 @@ import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -51,7 +52,7 @@ public class CommandEvents {
     CommandDispatcher<CommandSource> r = event.getDispatcher();
     r.register(LiteralArgumentBuilder.<CommandSource> literal(ModTomb.MODID)
         .requires((p) -> {
-          return p.hasPermissionLevel(3);
+          return p.hasPermission(3);
         })
         .then(Commands.literal(TombCommands.RESTORE.toString())
             .then(Commands.argument(ARG_PLAYER, GameProfileArgument.gameProfile()).suggests((cs, b) -> buildPlayerArg(cs, b))
@@ -88,38 +89,35 @@ public class CommandEvents {
   }
 
   private int exeDelete(CommandContext<CommandSource> ctx, GameProfile target) throws CommandSyntaxException {
-    ServerPlayerEntity user = ctx.getSource().asPlayer();
     PlayerTombRecords found = ModTomb.GLOBAL.findGrave(target.getId());
     if (found != null) {
       int previous = found.playerGraves.size();
       found.deleteAll();
       TranslationTextComponent msg = new TranslationTextComponent("Deleted: " + previous);
-      msg.setStyle(Style.EMPTY.setFormatting(TextFormatting.GOLD));
-      user.sendMessage(msg, user.getUniqueID());
+      msg.setStyle(Style.EMPTY.withColor(TextFormatting.GOLD));
+      ctx.getSource().sendSuccess(msg, false);
     }
     return 0;
   }
 
   private int exeList(CommandContext<CommandSource> ctx, GameProfile target) throws CommandSyntaxException {
-    ServerPlayerEntity user = ctx.getSource().asPlayer();
     PlayerTombRecords found = ModTomb.GLOBAL.findGrave(target.getId());
     if (found != null && found.playerGraves.size() > 0) {
       for (int i = 0; i < found.playerGraves.size(); i++) {
         TranslationTextComponent msg = new TranslationTextComponent(found.toDisplayString(i));
-        msg.setStyle(Style.EMPTY.setFormatting(TextFormatting.GOLD));
-        user.sendMessage(msg, user.getUniqueID());
+        msg.setStyle(Style.EMPTY.withColor(TextFormatting.GOLD));
+        ctx.getSource().sendSuccess(msg, false);
       }
     }
     else {
       TranslationTextComponent msg = new TranslationTextComponent("Found: #0");
-      msg.setStyle(Style.EMPTY.setFormatting(TextFormatting.GOLD));
-      user.sendMessage(msg, user.getUniqueID());
+      msg.setStyle(Style.EMPTY.withColor(TextFormatting.GOLD));
+      ctx.getSource().sendSuccess(msg, false);
     }
     return 0;
   }
 
   private int exeKey(CommandContext<CommandSource> ctx, GameProfile target, int index) throws CommandSyntaxException {
-    ServerPlayerEntity user = ctx.getSource().asPlayer();
     PlayerTombRecords found = ModTomb.GLOBAL.findGrave(target.getId());
     if (found != null) {
       CompoundNBT grave = found.playerGraves.get(index);
@@ -132,15 +130,18 @@ public class CommandEvents {
       TombRegistry.GRAVE_KEY.setTombPos(key, spawnPos);
       PlayerTombEvents.putKeyName(target.getName(), key);
       // key for u
+      StringTextComponent msg = new StringTextComponent("Attempting to give the key for tomb [" + index + "] to player " + target.getName() + ":" + target.getId());
+      ctx.getSource().sendSuccess(msg, false);
+
+      ServerPlayerEntity user = ctx.getSource().getServer().getPlayerList().getPlayer(target.getId());
       ItemHandlerHelper.giveItemToPlayer(user, key);
     }
     return 0;
   }
 
   private int exeRestore(CommandContext<CommandSource> ctx, GameProfile target, int index) throws CommandSyntaxException {
-    ServerPlayerEntity user = ctx.getSource().asPlayer();
     TranslationTextComponent msg = new TranslationTextComponent("Attempting to restore tomb [" + index + "] for player " + target.getName() + ":" + target.getId());
-    user.sendMessage(msg, user.getUniqueID());
+    ctx.getSource().sendSuccess(msg, false);
     PlayerTombRecords found = ModTomb.GLOBAL.findGrave(target.getId());
     if (found != null) {
       CompoundNBT grave = found.playerGraves.get(index);
@@ -154,13 +155,13 @@ public class CommandEvents {
       List<ItemStack> drops = PlayerTombRecords.getDrops(grave);
       //      ModTomb.LOGGER.error("items contained " + drops.size());
       //TODO: is this dupe code from location class?
-      RegistryKey<World> dimKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, ResourceLocation.tryCreate(dim));
-      ServerWorld targetWorld = ctx.getSource().getWorld().getServer().getWorld(dimKey);
+      RegistryKey<World> dimKey = RegistryKey.create(Registry.DIMENSION_REGISTRY, ResourceLocation.tryParse(dim));
+      ServerWorld targetWorld = ctx.getSource().getLevel().getServer().getLevel(dimKey);
       BlockState state = PlayerTombEvents.getRandomGrave(targetWorld, Direction.NORTH);
       boolean wasPlaced = WorldHelper.placeGrave(targetWorld, pos, state);
       if (wasPlaced) {
         //fill it up
-        TileEntityTomb tile = (TileEntityTomb) targetWorld.getTileEntity(pos);
+        TileEntityTomb tile = (TileEntityTomb) targetWorld.getBlockEntity(pos);
         tile.initTombstoneOwner(target);
         IItemHandler itemHandler = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null).orElse(null);
         //        ItemHandlerHelper.ins
@@ -169,7 +170,7 @@ public class CommandEvents {
         }
       }
       msg = new TranslationTextComponent("Restored tomb with at [" + pos + "] in " + dim);
-      user.sendMessage(msg, user.getUniqueID());
+      ctx.getSource().sendSuccess(msg, false);
     }
     return 0;
   }

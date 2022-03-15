@@ -27,7 +27,7 @@ public class EntityHelper {
     if (registryName == null) {
       return false;
     }
-    if (EnchantmentHelper.getEnchantmentLevel(Enchantments.BINDING_CURSE, stack) > 0) {
+    if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BINDING_CURSE, stack) > 0) {
       return false;
     }
     if (stack.getMaxStackSize() == 1) {
@@ -39,8 +39,8 @@ public class EntityHelper {
         }
       }
       //
-      if (player.getHeldItemOffhand().isEmpty()) {
-        if (stack.getItem().isShield(stack, player) && player.replaceItemInInventory(99, stack.copy())) {
+      if (player.getOffhandItem().isEmpty()) {
+        if (stack.getItem().isShield(stack, player) && player.setSlot(99, stack.copy())) {
           return true;
         }
       }
@@ -48,7 +48,7 @@ public class EntityHelper {
       boolean isElytra = false;
       if (slot == null) {
         if (stack.getItem() instanceof ArmorItem) {
-          slot = ((ArmorItem) stack.getItem()).getEquipmentSlot();
+          slot = ((ArmorItem) stack.getItem()).getSlot();
         }
         else {
           if (!(stack.getItem() instanceof ElytraItem)) {
@@ -62,9 +62,9 @@ public class EntityHelper {
         isElytra = stack.getItem() instanceof ElytraItem;
       }
       int slotId = slot.getIndex();
-      ItemStack stackInSlot = player.inventory.armorInventory.get(slotId);
+      ItemStack stackInSlot = player.inventory.armor.get(slotId);
       if (stackInSlot.isEmpty()) {
-        player.inventory.armorInventory.set(slotId, stack.copy());
+        player.inventory.armor.set(slotId, stack.copy());
         return true;
       }
       if (slot != EquipmentSlotType.CHEST) {
@@ -72,7 +72,7 @@ public class EntityHelper {
       }
       if (isElytra) {
         ItemHandlerHelper.giveItemToPlayer(player, stackInSlot.copy());
-        player.inventory.armorInventory.set(slotId, stack.copy());
+        player.inventory.armor.set(slotId, stack.copy());
         return true;
       }
     }
@@ -84,7 +84,7 @@ public class EntityHelper {
   }
 
   public static boolean isValidPlayerMP(@Nullable Entity entity) {
-    return isValidPlayer(entity) && !entity.world.isRemote;
+    return isValidPlayer(entity) && !entity.level.isClientSide;
   }
 
   public static CompoundNBT getPersistentTag(PlayerEntity player) {

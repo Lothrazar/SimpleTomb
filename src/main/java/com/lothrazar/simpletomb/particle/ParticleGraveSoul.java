@@ -18,32 +18,32 @@ public class ParticleGraveSoul extends SpriteTexturedParticle {
 
   private ParticleGraveSoul(IAnimatedSprite spriteSet, ClientWorld world, double x, double y, double z, double radius) {
     super(world, x, y + 0.85d, z);
-    this.maxAge = 100;
-    this.particleScale = 0.03f;
+    this.lifetime = 100;
+    this.quadSize = 0.03f;
     this.centerX = x + 0.5d;
     this.centerZ = z + 0.5d;
     this.radius = radius;
     updatePosition();
-    setAlphaF(0.7f);
+    setAlpha(0.7f);
     setColor(81f / 255f, 25f / 255f, 139f / 255f);
-    this.canCollide = false;
+    this.hasPhysics = false;
     this.spriteSet = spriteSet;
-    selectSpriteWithAge(this.spriteSet);
+    setSpriteFromAge(this.spriteSet);
   }
 
   private void updatePosition() {
-    double ratio = this.age / (double) this.maxAge;
-    this.motionX = this.motionY = this.motionZ = 0d;
-    this.prevPosX = this.posX = this.centerX + this.radius * Math.cos(2 * Math.PI * ratio);
-    this.prevPosY = this.posY;
-    this.prevPosZ = this.posZ = this.centerZ + this.radius * Math.sin(2 * Math.PI * ratio);
+    double ratio = this.age / (double) this.lifetime;
+    this.xd = this.yd = this.zd = 0d;
+    this.xo = this.x = this.centerX + this.radius * Math.cos(2 * Math.PI * ratio);
+    this.yo = this.y;
+    this.zo = this.z = this.centerZ + this.radius * Math.sin(2 * Math.PI * ratio);
   }
 
   @Override
   public void tick() {
     super.tick();
     if (isAlive()) {
-      selectSpriteWithAge(this.spriteSet);
+      setSpriteFromAge(this.spriteSet);
       updatePosition();
     }
   }
@@ -62,7 +62,7 @@ public class ParticleGraveSoul extends SpriteTexturedParticle {
     }
 
     @Override
-    public Particle makeParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
+    public Particle createParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
       return new ParticleGraveSoul(this.spriteSet, world, x, y, z, 0.3d);
     }
   }

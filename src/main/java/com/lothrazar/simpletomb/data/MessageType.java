@@ -21,7 +21,7 @@ public enum MessageType {
 
   public static final Style MESSAGE_SPECIAL;
   static {
-    MESSAGE_SPECIAL = Style.EMPTY.setFormatting(TextFormatting.GOLD);
+    MESSAGE_SPECIAL = Style.EMPTY.withColor(TextFormatting.GOLD);
   }
   private final String key;
 
@@ -43,6 +43,6 @@ public enum MessageType {
 
   public void sendSpecialMessage(PlayerEntity sender, Object... params) {
     // 
-    sender.sendMessage(this.getTranslationWithStyle(MESSAGE_SPECIAL, params), sender.getUniqueID());
+    sender.sendMessage(this.getTranslationWithStyle(MESSAGE_SPECIAL, params), sender.getUUID());
   }
 }

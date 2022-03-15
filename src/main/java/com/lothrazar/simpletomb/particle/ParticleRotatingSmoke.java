@@ -14,23 +14,23 @@ public class ParticleRotatingSmoke extends TransparentParticle {
 
   private ParticleRotatingSmoke(IAnimatedSprite spriteSet, ClientWorld world, double x, double y, double z) {
     super(world, x, y + 0.3d, z);
-    this.motionX = this.motionY = this.motionZ = 0d;
-    setAlphaF(0.5f);
-    multiplyParticleScaleBy(2f);
+    this.xd = this.yd = this.zd = 0d;
+    setAlpha(0.5f);
+    scale(2f);
     //    this.mul
-    setMaxAge(100);
-    this.canCollide = false;
-    this.prevParticleAngle = this.particleAngle = (float) (world.rand.nextFloat() * Math.PI * 2f);
+    setLifetime(100);
+    this.hasPhysics = false;
+    this.oRoll = this.roll = (float) (world.random.nextFloat() * Math.PI * 2f);
     this.rotIncrement = (float) (Math.PI * 0.02f);
     setColor(0.7f, 0.7f, 0.7f);
     this.spriteSet = spriteSet;
-    selectSpriteWithAge(this.spriteSet);
+    setSpriteFromAge(this.spriteSet);
   }
 
   private void updatePosition() {
-    this.prevParticleAngle = this.particleAngle;
-    this.particleAngle += this.rotIncrement;
-    float color = 0.6f + this.world.rand.nextFloat() * 0.2f;
+    this.oRoll = this.roll;
+    this.roll += this.rotIncrement;
+    float color = 0.6f + this.level.random.nextFloat() * 0.2f;
     setColor(color, color, color);
   }
 
@@ -39,12 +39,12 @@ public class ParticleRotatingSmoke extends TransparentParticle {
     super.tick();
     if (isAlive()) {
       updatePosition();
-      selectSpriteWithAge(this.spriteSet);
+      setSpriteFromAge(this.spriteSet);
     }
   }
 
   @Override
-  protected int getBrightnessForRender(float partialTick) {
+  protected int getLightColor(float partialTick) {
     int skylight = 15;
     int blocklight = 15;
     return skylight << 20 | blocklight << 4;
@@ -64,7 +64,7 @@ public class ParticleRotatingSmoke extends TransparentParticle {
     }
 
     @Override
-    public Particle makeParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
+    public Particle createParticle(BasicParticleType type, ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ) {
       return new ParticleRotatingSmoke(this.spriteSet, world, x, y, z);
     }
   }

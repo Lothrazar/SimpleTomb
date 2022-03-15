@@ -56,7 +56,7 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
 
   public void giveInventory(@Nullable PlayerEntity player) {
     IItemHandler inventory = handler.orElse(null);
-    if (!this.world.isRemote && player != null && !(player instanceof FakePlayer)) {
+    if (!this.level.isClientSide && player != null && !(player instanceof FakePlayer)) {
       //
       for (int i = inventory.getSlots() - 1; i >= 0; --i) {
         if (EntityHelper.autoEquip(inventory.getStackInSlot(i), player)) {
@@ -71,8 +71,8 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
         }
       });
       this.removeGraveBy(player);
-      if (player.container != null) {
-        player.container.detectAndSendChanges();
+      if (player.inventoryMenu != null) {
+        player.inventoryMenu.broadcastChanges();
       }
       MessageType.MESSAGE_OPEN_GRAVE_SUCCESS.sendSpecialMessage(player);
     }
@@ -83,12 +83,12 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
   }
 
   private void removeGraveBy(@Nullable PlayerEntity player) {
-    if (this.world != null) {
-      WorldHelper.removeNoEvent(this.world, this.pos);
+    if (this.level != null) {
+      WorldHelper.removeNoEvent(this.level, this.worldPosition);
       if (player != null) {
-        this.world.playSound(player,
-            player.getPosition(),
-            SoundEvents.BLOCK_WOODEN_DOOR_CLOSE, SoundCategory.BLOCKS, 1.0F, 1.0F);
+        this.level.playSound(player,
+            player.blockPosition(),
+            SoundEvents.WOODEN_DOOR_CLOSE, SoundCategory.BLOCKS, 1.0F, 1.0F);
       }
     }
   }
@@ -96,7 +96,7 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
   public void initTombstoneOwner(PlayerEntity owner) {
     this.deathDate = System.currentTimeMillis();
     this.ownerName = owner.getDisplayName().getString();
-    this.ownerId = owner.getUniqueID();
+    this.ownerId = owner.getUUID();
   }
 
   public void initTombstoneOwner(GameProfile owner) {
@@ -110,19 +110,19 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
       return false;
     }
     //dont match on name. id is always set anyway 
-    return this.ownerId.equals(owner.getUniqueID());
+    return this.ownerId.equals(owner.getUUID());
   }
 
   @Override
   public AxisAlignedBB getRenderBoundingBox() {
     double renderExtension = 1.0D;
     return new AxisAlignedBB(
-        this.pos.getX() - renderExtension,
-        this.pos.getY() - renderExtension,
-        this.pos.getZ() - renderExtension,
-        this.pos.getX() + 1 + renderExtension,
-        this.pos.getY() + 1 + renderExtension,
-        this.pos.getZ() + 1 + renderExtension);
+        this.worldPosition.getX() - renderExtension,
+        this.worldPosition.getY() - renderExtension,
+        this.worldPosition.getZ() - renderExtension,
+        this.worldPosition.getX() + 1 + renderExtension,
+        this.worldPosition.getY() + 1 + renderExtension,
+        this.worldPosition.getZ() + 1 + renderExtension);
   }
 
   @Override
@@ -130,12 +130,12 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
     this.timer++;
     if (this.timer % SOULTIMER == 0) {
       this.timer = 1;
-      if (this.world.isRemote) {
-        ClientUtils.produceGraveSoul(this.world, this.pos);
+      if (this.level.isClientSide) {
+        ClientUtils.produceGraveSoul(this.level, this.worldPosition);
       }
     }
-    if (this.world.isRemote) {
-      ClientUtils.produceGraveSmoke(this.world, this.pos.getX(), this.pos.getY(), this.pos.getZ());
+    if (this.level.isClientSide) {
+      ClientUtils.produceGraveSmoke(this.level, this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
     }
   }
 
@@ -153,34 +153,34 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
 
   @SuppressWarnings("unchecked")
   @Override
-  public CompoundNBT write(CompoundNBT compound) {
+  public CompoundNBT save(CompoundNBT compound) {
     compound.putString("ownerName", this.ownerName);
     compound.putLong("deathDate", this.deathDate);
     compound.putInt("countTicks", this.timer);
     if (this.ownerId != null) {
-      compound.putUniqueId("ownerid", this.ownerId);
+      compound.putUUID("ownerid", this.ownerId);
     }
     handler.ifPresent(h -> {
       CompoundNBT ct = ((INBTSerializable<CompoundNBT>) h).serializeNBT();
       compound.put("inv", ct);
     });
     compound.putBoolean("onlyOwnersAccess", this.onlyOwnersAccess);
-    return super.write(compound);
+    return super.save(compound);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void read(BlockState bs, CompoundNBT compound) {
+  public void load(BlockState bs, CompoundNBT compound) {
     this.ownerName = compound.getString("ownerName");
     this.deathDate = compound.getLong("deathDate");
     this.timer = compound.getInt("countTicks");
     CompoundNBT invTag = compound.getCompound("inv");
     handler.ifPresent(h -> ((INBTSerializable<CompoundNBT>) h).deserializeNBT(invTag));
-    if (compound.hasUniqueId("ownerid")) {
-      this.ownerId = compound.getUniqueId("ownerid");
+    if (compound.hasUUID("ownerid")) {
+      this.ownerId = compound.getUUID("ownerid");
     }
     this.onlyOwnersAccess = compound.getBoolean("onlyOwnersAccess");
-    super.read(bs, compound);
+    super.load(bs, compound);
   }
 
   @Override
@@ -194,18 +194,18 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
   @Override
   public void invalidateCaps() {
     IItemHandler inventory = handler.orElse(null);
-    if (this.world != null && !this.world.isRemote) {
-      if (this.world.getBlockState(this.pos).getBlock() instanceof BlockTomb) {
+    if (this.level != null && !this.level.isClientSide) {
+      if (this.level.getBlockState(this.worldPosition).getBlock() instanceof BlockTomb) {
         return;
       }
       for (int i = 0; i < inventory.getSlots(); ++i) {
         ItemStack stack = inventory.getStackInSlot(i);
         if (!stack.isEmpty()) {
-          InventoryHelper.spawnItemStack(
-              this.world,
-              this.pos.getX(),
-              this.pos.getY(),
-              this.pos.getZ(),
+          InventoryHelper.dropItemStack(
+              this.level,
+              this.worldPosition.getX(),
+              this.worldPosition.getY(),
+              this.worldPosition.getZ(),
               inventory.extractItem(i, stack.getCount(), false));
         }
       }
@@ -216,7 +216,7 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
   @Override
   public CompoundNBT getUpdateTag() {
     CompoundNBT compound = new CompoundNBT();
-    super.write(compound);
+    super.save(compound);
     compound.putString("ownerName", this.ownerName);
     compound.putLong("deathDate", this.deathDate);
     compound.putInt("countTicks", this.timer);
@@ -225,16 +225,16 @@ public class TileEntityTomb extends TileEntity implements ITickableTileEntity {
 
   @Override
   public SUpdateTileEntityPacket getUpdatePacket() {
-    return new SUpdateTileEntityPacket(this.pos, 1, getUpdateTag());
+    return new SUpdateTileEntityPacket(this.worldPosition, 1, getUpdateTag());
   }
 
   @Override
-  public boolean receiveClientEvent(int id, int type) {
+  public boolean triggerEvent(int id, int type) {
     return true;
   }
 
   @Override
   public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
-    read(this.getBlockState(), pkt.getNbtCompound());
+    load(this.getBlockState(), pkt.getTag());
   }
 }

@@ -21,7 +21,7 @@ public class WorldHelper {
 
   public static String dimensionToString(World w) {
     //example: returns "minecraft:overworld" resource location
-    return w.getDimensionKey().getLocation().toString();
+    return w.dimension().location().toString();
   }
 
   public static boolean isValidPlacement(World world, BlockPos myPos) {
@@ -34,18 +34,18 @@ public class WorldHelper {
     //    FluidState fluidHere = world.getFluidState(myPos);
     //only air or water. not any fluid state, and not any waterlogged block
     BlockState blockState = world.getBlockState(myPos);
-    return blockState.getBlock() == Blocks.AIR || blockState.getBlock() == Blocks.WATER; // && fluidHere.getFluid().isIn(FluidTags.WATER));
+    return blockState.isAir() || blockState.getBlock() == Blocks.WATER; // && fluidHere.getFluid().isIn(FluidTags.WATER));
   }
 
   public static LocationBlockPos findGraveSpawn(final PlayerEntity player, final BlockPos initPos) {
     final int xRange = ConfigTomb.HSEARCHRANGE.get();
     final int yRange = ConfigTomb.VSEARCHRANGE.get();
     final int zRange = ConfigTomb.HSEARCHRANGE.get();
-    World world = player.world;
+    World world = player.level;
     //   
     //shortcut: if the death position is valid AND solid base. JUST DO THAT dont even search
-    if (isValidPlacement(player.world, initPos)
-        && isValidSolid(player.world, initPos)) {
+    if (isValidPlacement(player.level, initPos)
+        && isValidSolid(player.level, initPos)) {
       //      ModTomb.LOGGER.info(" initPos is enough =  " + initPos);
       return new LocationBlockPos(initPos, world);
     }
@@ -93,20 +93,20 @@ public class WorldHelper {
   }
 
   private static boolean isValidSolid(World world, BlockPos myPos) {
-    return world.getBlockState(myPos.down()).isSolid();
+    return world.getBlockState(myPos.below()).canOcclude();
   }
 
   private static void sortByDistance(final BlockPos initPos, List<BlockPos> positions) {
     positions.sort((pos0, pos1) -> {
-      double dist0 = Math.sqrt(pos0.distanceSq(initPos));
-      double dist1 = Math.sqrt(pos1.distanceSq(initPos));
+      double dist0 = Math.sqrt(pos0.distSqr(initPos));
+      double dist1 = Math.sqrt(pos1.distSqr(initPos));
       return Double.valueOf(dist0).compareTo(dist1);
     });
   }
 
   public static BlockPos getInitialPos(World world, BlockPos pos) {
     WorldBorder border = world.getWorldBorder();
-    boolean validXZ = border.contains(pos);
+    boolean validXZ = border.isWithinBounds(pos);
     boolean validY = !World.isOutsideBuildHeight(pos);
     if (validXZ && validY) {
       return pos;
@@ -116,15 +116,15 @@ public class WorldHelper {
       int y = pos.getY();
       int z = pos.getZ();
       if (!validXZ) {
-        x = Math.min(Math.max(pos.getX(), (int) border.minX()), (int) border.maxX());
-        z = Math.min(Math.max(pos.getZ(), (int) border.minZ()), (int) border.maxZ());
+        x = Math.min(Math.max(pos.getX(), (int) border.getMinX()), (int) border.getMaxX());
+        z = Math.min(Math.max(pos.getZ(), (int) border.getMinZ()), (int) border.getMaxZ());
       }
       if (!validY) {
         if (y < 1) {
           y = 1;
         }
-        if (y > world.getHeight()) {
-          y = world.getHeight() - 1;
+        if (y > world.getMaxBuildHeight()) {
+          y = world.getMaxBuildHeight() - 1;
         }
       }
       return new BlockPos(x, y, z);
@@ -132,23 +132,23 @@ public class WorldHelper {
   }
 
   public static boolean isRuleKeepInventory(PlayerEntity player) {
-    return isRuleKeepInventory(player.world);
+    return isRuleKeepInventory(player.level);
   }
 
   public static boolean isRuleKeepInventory(World world) {
-    return world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
+    return world.getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY);
   }
 
   public static void removeNoEvent(World world, BlockPos pos) {
-    world.setBlockState(pos, Blocks.AIR.getDefaultState(), 3);
+    world.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
   }
 
   public static boolean placeGrave(World world, BlockPos pos, BlockState state) {
-    return world.setBlockState(pos, state, 2);
+    return world.setBlock(pos, state, 2);
   }
 
   public static boolean isNight(World world) {
-    float angle = world.getCelestialAngleRadians(0.0F);
+    float angle = world.getSunAngle(0.0F);
     return angle >= 0.245F && angle <= 0.755F;
   }
 

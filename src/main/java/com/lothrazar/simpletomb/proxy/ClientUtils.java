@@ -24,7 +24,7 @@ public class ClientUtils {
   }
 
   public static void produceGraveSmoke(World world, double x, double y, double z) {
-    Minecraft.getInstance().particles.addParticle(TombRegistry.GRAVE_SMOKE, x + world.rand.nextGaussian(), y, z + world.rand.nextGaussian(), 0d, 0d, 0d);
+    Minecraft.getInstance().particleEngine.createParticle(TombRegistry.GRAVE_SMOKE, x + world.random.nextGaussian(), y, z + world.random.nextGaussian(), 0d, 0d, 0d);
   }
 
   public static void produceGraveSoul(World world, BlockPos pos) {
@@ -33,20 +33,20 @@ public class ClientUtils {
 
   public static void produceParticleCasting(LivingEntity caster, Predicate<LivingEntity> predic) {
     Minecraft mc = Minecraft.getInstance();
-    if (caster != null && caster.world instanceof ClientWorld) {
+    if (caster != null && caster.level instanceof ClientWorld) {
       ParticleCasting particle;
       for (int i = 1; i <= 2; i++) {
-        ClientWorld cworld = (ClientWorld) caster.world;
+        ClientWorld cworld = (ClientWorld) caster.level;
         particle = new ParticleCasting(cworld, caster, predic, 0d, i * 0.5d);
-        mc.particles.addEffect(particle);
+        mc.particleEngine.add(particle);
         particle = new ParticleCasting(cworld, caster, predic, 0.5d, (i + 1) * 0.5d);
-        mc.particles.addEffect(particle);
+        mc.particleEngine.add(particle);
         particle = new ParticleCasting(cworld, caster, predic, 1d, i * 0.5d);
-        mc.particles.addEffect(particle);
+        mc.particleEngine.add(particle);
         particle = new ParticleCasting(cworld, caster, predic, 1.5d, (i + 1) * 0.5d);
-        mc.particles.addEffect(particle);
+        mc.particleEngine.add(particle);
         particle = new ParticleCasting(cworld, caster, predic, 2d, i * 0.5d);
-        mc.particles.addEffect(particle);
+        mc.particleEngine.add(particle);
       }
     }
   }
